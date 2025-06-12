@@ -110,6 +110,7 @@ class NodeDbSourceImpl : NodeDbSource {
         return result
     }
 
+    @Suppress("LongMethod")
     override fun initializeWithSampleData() {
         val sampleNodes = mapOf(
             "1" to HierarchyNodeEntity(
@@ -158,6 +159,24 @@ class NodeDbSourceImpl : NodeDbSource {
                 id = "8",
                 value = "Grandchild 1.1.1.1",
                 parentId = "7",
+                depth = 4,
+            ),
+            "9" to HierarchyNodeEntity(
+                id = "9",
+                value = "Child 3",
+                parentId = "1",
+                depth = 1,
+            ),
+            "10" to HierarchyNodeEntity(
+                id = "10",
+                value = "Child 4",
+                parentId = "1",
+                depth = 4,
+            ),
+            "11" to HierarchyNodeEntity(
+                id = "11",
+                value = "Child 5",
+                parentId = "1",
                 depth = 4,
             ),
         )

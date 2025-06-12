@@ -14,7 +14,8 @@ class PendingOperationsQueueImpl(
     private val hierDbSource: NodeDbSource,
 ) : PendingOperationsQueue {
     private val _operationsFlow = MutableStateFlow<List<NodeOperationEntity>>(emptyList())
-    override val operationsFlow: StateFlow<List<NodeOperationEntity>> = _operationsFlow.asStateFlow()
+    override val operationsFlow: StateFlow<List<NodeOperationEntity>> =
+        _operationsFlow.asStateFlow()
 
     override fun addNode(value: String, parentId: String) {
         val newId = generateId(value)
@@ -43,34 +44,36 @@ class PendingOperationsQueueImpl(
         }
     }
 
-    override suspend fun applyAllCommand() {
-        val operations = _operationsFlow.value
-        operations.forEach { operation ->
-            when (operation) {
-                is NodeOperationEntity.Add -> {
-                    hierDbSource.addNode(
-                        HierarchyNodeEntity(
-                            id = operation.nodeId,
-                            value = operation.value,
-                            parentId = operation.parentId,
-                        ),
-                    )
-                }
+    override suspend fun applyAllCommand(): Result<Unit> {
+        return runCatching {
+            val operations = _operationsFlow.value
+            operations.forEach { operation ->
+                when (operation) {
+                    is NodeOperationEntity.Add -> {
+                        hierDbSource.addNode(
+                            HierarchyNodeEntity(
+                                id = operation.nodeId,
+                                value = operation.value,
+                                parentId = operation.parentId,
+                            ),
+                        )
+                    }
 
-                is NodeOperationEntity.Delete -> {
-                    hierDbSource.deleteNode(operation.nodeId)
-                }
+                    is NodeOperationEntity.Delete -> {
+                        hierDbSource.deleteNode(operation.nodeId)
+                    }
 
-                is NodeOperationEntity.Modify -> {
-                    hierDbSource.modifyNode(
-                        nodeId = operation.nodeId,
-                        newValue = operation.newValue,
-                    )
+                    is NodeOperationEntity.Modify -> {
+                        hierDbSource.modifyNode(
+                            nodeId = operation.nodeId,
+                            newValue = operation.newValue,
+                        )
+                    }
                 }
             }
-        }
 
-        _operationsFlow.value = emptyList()
+            _operationsFlow.value = emptyList()
+        }
     }
 
     @OptIn(ExperimentalTime::class)

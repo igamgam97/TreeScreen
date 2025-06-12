@@ -25,17 +25,17 @@ class HierarchyViewModel(
         when (uiAction) {
             is HierarchyAction.Init -> loadInitialData()
             is HierarchyAction.Apply -> handleApplyBtnClick()
-            is HierarchyAction.ResetCache -> resetCache()
-            is HierarchyAction.SelectNode -> selectNode(uiAction.node)
-            is HierarchyAction.SelectCacheNode -> selectCacheNode(uiAction.node)
-            is HierarchyAction.MoveToCache -> moveToCache(uiAction.nodeId)
-            is HierarchyAction.AddNode -> addNode(uiAction.value, uiAction.parentId)
-            is HierarchyAction.ModifyNode -> modifyNode(
+            is HierarchyAction.ResetCache -> handleResetCache()
+            is HierarchyAction.SelectNode -> handleSelectNode(uiAction.node)
+            is HierarchyAction.SelectCacheNode -> handleSelectCacheNode(uiAction.node)
+            is HierarchyAction.MoveToCache -> handleMoveToCache(uiAction.nodeId)
+            is HierarchyAction.AddNode -> handleAddNode(uiAction.value, uiAction.parentId)
+            is HierarchyAction.ModifyNode -> handleModifyNode(
                 uiAction.nodeId,
                 uiAction.newValue,
             )
 
-            is HierarchyAction.DeleteNode -> deleteNode(uiAction.nodeId)
+            is HierarchyAction.DeleteNode -> handleDeleteNode(uiAction.nodeId)
         }
     }
 
@@ -88,17 +88,39 @@ class HierarchyViewModel(
 
     private fun handleApplyBtnClick() {
         viewModelScope.launch {
-            hierarchyCacheCoordinator.applyAllCommand()
+            _uiState.update {
+                it.copy(
+                    stateType = StateType.loading(),
+                )
+            }
+            val result = hierarchyCacheCoordinator.applyAllCommand()
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            stateType = StateType.loading(),
+                        )
+                    }
+                },
+                onFailure = {
+                    _uiState.update {
+                        it.copy(
+                            stateType = StateType.loading(),
+                        )
+                    }
+                    _singleEvent.emit(HierarchyEvent.ShowErrorInfo("Something wrong"))
+                },
+            )
         }
     }
 
-    private fun resetCache() {
+    private fun handleResetCache() {
         viewModelScope.launch {
             hierarchyCacheCoordinator.resetCache()
         }
     }
 
-    private fun selectNode(node: HierarchyNodeUiModel) {
+    private fun handleSelectNode(node: HierarchyNodeUiModel) {
         _uiState.update {
             it.copy(
                 selectedNodeId = node,
@@ -107,7 +129,7 @@ class HierarchyViewModel(
         }
     }
 
-    private fun selectCacheNode(node: HierarchyNodeUiModel) {
+    private fun handleSelectCacheNode(node: HierarchyNodeUiModel) {
         _uiState.update {
             it.copy(
                 selectedNodeId = node,
@@ -116,27 +138,48 @@ class HierarchyViewModel(
         }
     }
 
-    private fun moveToCache(nodeId: String) {
+    private fun handleMoveToCache(nodeId: String) {
         viewModelScope.launch {
-            val result = hierarchyCacheCoordinator.moveNode(nodeId)
-            result.onFailure {
-                _singleEvent.emit(
-                    HierarchyEvent.ShowErrorInfo(
-                        message = it.message ?: "Unknown error ",
-                    ),
+            _uiState.update {
+                it.copy(
+                    stateType = StateType.loading(),
                 )
             }
+            val result = hierarchyCacheCoordinator.moveNode(nodeId)
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            stateType = StateType.data(),
+                        )
+                    }
+                },
+                onFailure = {
+                    _uiState.update {
+                        it.copy(
+                            stateType = StateType.data(),
+                        )
+                    }
+                    result.onFailure {
+                        _singleEvent.emit(
+                            HierarchyEvent.ShowErrorInfo(
+                                message = it.message ?: "Unknown error ",
+                            ),
+                        )
+                    }
+                },
+            )
         }
     }
 
-    private fun addNode(value: String, parentId: String?) {
+    private fun handleAddNode(value: String, parentId: String?) {
         parentId ?: return
         viewModelScope.launch {
             hierarchyCacheCoordinator.addNode(value, parentId)
         }
     }
 
-    private fun modifyNode(nodeId: String, newValue: String) {
+    private fun handleModifyNode(nodeId: String, newValue: String) {
         viewModelScope.launch {
             hierarchyCacheCoordinator.modifyNode(
                 nodeId = nodeId,
@@ -145,7 +188,7 @@ class HierarchyViewModel(
         }
     }
 
-    private fun deleteNode(nodeId: String) {
+    private fun handleDeleteNode(nodeId: String) {
         viewModelScope.launch {
             hierarchyCacheCoordinator.deleteNode(nodeId)
         }

@@ -27,7 +27,7 @@ interface PendingOperationsQueue {
     /**
      * Applies all pending operations to the repository and clears the queue.
      */
-    suspend fun applyAllCommand()
+    suspend fun applyAllCommand(): Result<Unit>
 
     /**
      * Clears all pending operations without applying them.
