@@ -1,8 +1,7 @@
 package org.example.plotapp.feature.hierarchyeditor.domain
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import org.example.plotapp.feature.hierarchyeditor.data.entity.hiearchy.HierarchyNodeEntity
 import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeOperationEntity
@@ -14,6 +13,7 @@ class HierarchyCacheCoordinator(
     private val nodeDbSource: NodeDbSource,
     private val smartTreeCache: TreeStateCache,
     private val operationsSource: PendingOperationsQueue,
+    private val ioDispatcher: CoroutineDispatcher,
 ) {
 
     val cacheNodesFlow
@@ -28,12 +28,12 @@ class HierarchyCacheCoordinator(
     init {
         // Отслеживаем изменения операций и обновляем дерево инкрементально
         // moveNode обновляет дерево напрямую, поэтому слушаем только операции
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(ioDispatcher).launch {
             operationsSource.operationsFlow.collect { operations ->
                 updateOrderedNodesForOperations(operations)
             }
         }
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(ioDispatcher).launch {
             nodeDbSource.nodesFlow.collect { operations ->
                 actualiseCache(operations)
             }
@@ -44,7 +44,7 @@ class HierarchyCacheCoordinator(
         smartTreeCache.updateNodes(nodes)
     }
 
-    suspend fun moveNode(nodeId: String): Result<Unit> {
+    suspend fun moveNode(nodeId: String): Result<Unit> = with(ioDispatcher) {
         val node = nodeDbSource.findNodeById(nodeId)
             ?: throw IllegalArgumentException("Node with id $nodeId not found in database")
         if (isAncestorInDeletionQueue(nodeId)) {
@@ -108,8 +108,8 @@ class HierarchyCacheCoordinator(
         operationsSource.modifyNode(nodeId, newValue)
     }
 
-    suspend fun applyAllCommand() {
-        operationsSource.applyAllCommand()
+    suspend fun applyAllCommand(): Result<Unit> {
+        return operationsSource.applyAllCommand()
     }
 
     fun initializeWithSampleData() {

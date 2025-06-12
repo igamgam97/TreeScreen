@@ -1,5 +1,6 @@
 package org.example.plotapp.feature.hierarchyeditor.di
 
+import org.example.plotapp.core.common.dispatcher.DispatcherIoScope
 import org.example.plotapp.feature.hierarchyeditor.data.source.cache.TreeStateCache
 import org.example.plotapp.feature.hierarchyeditor.data.source.cache.TreeStateCacheImpl
 import org.example.plotapp.feature.hierarchyeditor.data.source.database.NodeDbSource
@@ -19,7 +20,9 @@ import org.koin.dsl.module
  * Dependency injection module for the hierarchy editor feature.
  */
 val hierarchyEditorModule = module {
-    singleOf(::HierarchyCacheCoordinator)
+    singleOf(::HierarchyCacheCoordinator) {
+        DispatcherIoScope
+    }
     singleOf(::NodeDbSourceImpl) bind NodeDbSource::class
     singleOf(::HierchyEntityMapper)
     singleOf(::TreeCacheMapper)

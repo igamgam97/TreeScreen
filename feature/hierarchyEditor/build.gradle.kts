@@ -13,6 +13,7 @@ kotlin {
             implementation(project(":core:data"))
             implementation(project(":core:model"))
             implementation(project(":core:viewmodel"))
+            implementation(project(":core:common"))
             // Compose
             implementation(libs.navigation.compose)
             implementation(compose.components.resources)
