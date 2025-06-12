@@ -1,6 +1,7 @@
 plugins {
     id("org.example.plotapp.kotlinMultiplatform")
     id("org.example.plotapp.composeMultiplatform")
+    alias(libs.plugins.mokkery)
 }
 
 kotlin {
@@ -20,6 +21,11 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             // Collections
             implementation(libs.kotlinx.collections.immutable)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.turbine)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
