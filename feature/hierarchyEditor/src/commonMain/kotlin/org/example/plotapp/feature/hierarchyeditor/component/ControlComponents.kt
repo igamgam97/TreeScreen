@@ -48,10 +48,11 @@ fun ControlPanel(
     hasOperations: Boolean,
     selectedNode: HierarchyNodeUiModel?,
     selectedNodeInDatabase: Boolean,
+    isLoading: Boolean,
     onAddNode: () -> Unit,
     onModifyNode: () -> Unit,
     onDeleteNode: () -> Unit,
-    onMoveToCache: () -> Unit,
+    onMoveNodeBtnClick: (String) -> Unit,
     onSyncToDatabase: () -> Unit,
     onResetCache: () -> Unit,
     modifier: Modifier = Modifier,
@@ -69,25 +70,29 @@ fun ControlPanel(
         CompactButton(
             icon = Icons.Default.Add,
             onClick = onAddNode,
-            enabled = isCacheSelected,
+            enabled = isCacheSelected && !isLoading,
         )
 
         CompactButton(
             icon = Icons.Default.Edit,
             onClick = onModifyNode,
-            enabled = isCacheSelected,
+            enabled = isCacheSelected && !isLoading,
         )
 
         CompactButton(
             icon = Icons.Default.Delete,
             onClick = onDeleteNode,
-            enabled = isCacheSelected,
+            enabled = isCacheSelected && !isLoading,
         )
 
         CompactButton(
             icon = Icons.AutoMirrored.Filled.ArrowForward,
-            onClick = onMoveToCache,
-            enabled = isDbSelected,
+            onClick = {
+                selectedNode?.let { nodeId ->
+                    onMoveNodeBtnClick(nodeId.id)
+                }
+            },
+            enabled = isDbSelected && !isLoading,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -96,12 +101,13 @@ fun ControlPanel(
         CompactButton(
             icon = Icons.Default.Check,
             onClick = onSyncToDatabase,
-            enabled = hasOperations,
+            enabled = hasOperations && !isLoading,
         )
 
         CompactButton(
             icon = Icons.Default.Refresh,
             onClick = onResetCache,
+            enabled = !isLoading,
         )
     }
 }

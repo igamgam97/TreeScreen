@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -85,8 +84,7 @@ private fun TreeViewContainer(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .height(400.dp),
+            .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
@@ -204,7 +202,7 @@ fun getNodeColor(status: NodeStatus): Color {
     return when (status) {
         NodeStatus.Unchanged -> Color(color = 0xFF8B4513) // Brown
         NodeStatus.Added -> Color(color = 0xFF4CAF50) // Green
-        NodeStatus.Deleted -> Color(color = 0xFF757575) // Gray
+        NodeStatus.Deleted -> Color(color = 0xFFFF0000) // Red
         NodeStatus.Modified -> Color(color = 0xFF9C27B0) // Purple
         NodeStatus.NotExists -> Color(color = 0xFF8B4513)
     }

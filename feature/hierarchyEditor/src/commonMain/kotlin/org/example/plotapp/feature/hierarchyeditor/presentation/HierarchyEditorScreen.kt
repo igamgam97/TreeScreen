@@ -5,14 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -26,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -46,11 +45,9 @@ import plotapp.feature.hierarchyeditor.generated.resources.added_node
 import plotapp.feature.hierarchyeditor.generated.resources.cache_reset
 import plotapp.feature.hierarchyeditor.generated.resources.changes_applied_to_database
 import plotapp.feature.hierarchyeditor.generated.resources.deleted_node
-import plotapp.feature.hierarchyeditor.generated.resources.error_label
 import plotapp.feature.hierarchyeditor.generated.resources.hierarchy_database_editor
 import plotapp.feature.hierarchyeditor.generated.resources.modified_node
 import plotapp.feature.hierarchyeditor.generated.resources.original_node
-import plotapp.feature.hierarchyeditor.generated.resources.retry
 
 /**
  * Main screen for the hierarchy editor.
@@ -194,60 +191,21 @@ private fun HierarchyEditorScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        when {
-            uiState.stateType.isLoading() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            uiState.stateType.isError() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.error_label),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = onResetBtnClick,
-                        ) {
-                            Text(stringResource(Res.string.retry))
-                        }
-                    }
-                }
-            }
-
-            uiState.stateType.isData() -> {
-                Data(
-                    uiState = uiState,
-                    onSelectedNode = onSelectedNode,
-                    onSelectCacheNode = onSelectCacheNode,
-                    onResetBtnClick = onResetBtnClick,
-                    onApplyBtnClick = onApplyBtnClick,
-                    onMoveNodeBtnClick = onMoveNodeBtnClick,
-                    onShowDeleteDialog = onShowDeleteDialog,
-                    onShowModifyDialog = onShowModifyDialog,
-                    onShowAddDialog = onShowAddDialog,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(16.dp),
-                )
-            }
-        }
+        Data(
+            uiState = uiState,
+            onSelectedNode = onSelectedNode,
+            onSelectCacheNode = onSelectCacheNode,
+            onResetBtnClick = onResetBtnClick,
+            onApplyBtnClick = onApplyBtnClick,
+            onMoveNodeBtnClick = onMoveNodeBtnClick,
+            onShowDeleteDialog = onShowDeleteDialog,
+            onShowModifyDialog = onShowModifyDialog,
+            onShowAddDialog = onShowAddDialog,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+        )
     }
 }
 
@@ -273,14 +231,11 @@ private fun Data(
             hasOperations = uiState.operationsCache.isNotEmpty(),
             selectedNode = uiState.selectedNodeId,
             selectedNodeInDatabase = uiState.isSelectedNodeInDb,
+            isLoading = uiState.stateType.isLoading(),
             onAddNode = onShowAddDialog,
             onModifyNode = onShowModifyDialog,
             onDeleteNode = onShowDeleteDialog,
-            onMoveToCache = {
-                uiState.selectedNodeId?.let { nodeId ->
-                    onMoveNodeBtnClick(nodeId.id)
-                }
-            },
+            onMoveNodeBtnClick = onMoveNodeBtnClick,
             onSyncToDatabase = onApplyBtnClick,
             onResetCache = onResetBtnClick,
         )
@@ -288,8 +243,20 @@ private fun Data(
         ColorNodeListStatusDescription()
 
         // Tree Views
+
+        Box(
+            modifier = Modifier.height(5.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (uiState.stateType.isLoading()) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Database Tree View
