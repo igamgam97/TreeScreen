@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hierarchy_database_editor">Hierarchy Database Editor</string>
+    <string name="changes_applied_to_database">Changes applied to database</string>
+    <string name="cache_reset">Cache reset</string>
+    <string name="error_label">Error:</string>
+    <string name="retry">Retry</string>
+    <string name="original_node">Original Node</string>
+    <string name="modified_node">Modified Node</string>
+    <string name="deleted_node">Deleted Node</string>
+    <string name="added_node">Added Node</string>
+    
+    <!-- Control Panel -->
+    <string name="controls">Controls</string>
+    <string name="add">Add</string>
+    <string name="modify">Modify</string>
+    <string name="delete">Delete</string>
+    <string name="move_to_cache">Move to Cache</string>
+    <string name="apply">Apply</string>
+    <string name="reset">Reset</string>
+    
+    <!-- Dialogs -->
+    <string name="add_new_node">Add New Node</string>
+    <string name="modify_node">Modify Node</string>
+    <string name="delete_node">Delete Node</string>
+    <string name="node_value">Node Value</string>
+    <string name="update">Update</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_confirmation">Are you sure you want to delete \"%1$s\" and all its children?</string>
+    
+    <!-- Tree Views -->
+    <string name="database_tree">Database Tree</string>
+    <string name="cached_tree">Cached Tree</string>
+</resources>
