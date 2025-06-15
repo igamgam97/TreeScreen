@@ -13,9 +13,12 @@ import kotlin.time.ExperimentalTime
 class PendingOperationsQueueImpl(
     private val hierDbSource: NodeDbSource,
 ) : PendingOperationsQueue {
-    private val _operationsFlow = MutableStateFlow<List<NodeOperationEntity>>(emptyList())
-    override val operationsFlow: StateFlow<List<NodeOperationEntity>> =
-        _operationsFlow.asStateFlow()
+    private val _pendingOperationsFlow = MutableStateFlow<List<NodeOperationEntity>>(emptyList())
+    override val pendingOperationsFlow: StateFlow<List<NodeOperationEntity>> =
+        _pendingOperationsFlow.asStateFlow()
+    private val _updateNodeIdsFlow = MutableStateFlow<List<String>>(emptyList())
+    override val updatedNodeIdsFlow: StateFlow<List<String>> =
+        _updateNodeIdsFlow.asStateFlow()
 
     override fun addNode(value: String, parentId: String) {
         val newId = generateId(value)
@@ -25,54 +28,59 @@ class PendingOperationsQueueImpl(
             parentId = parentId,
         )
 
-        _operationsFlow.update { operations ->
+        _pendingOperationsFlow.update { operations ->
             operations + operation
         }
     }
 
     override fun deleteNode(nodeId: String) {
         val operation = NodeOperationEntity.Delete(nodeId)
-        _operationsFlow.update { operations ->
+        _pendingOperationsFlow.update { operations ->
             operations + operation
         }
     }
 
     override fun modifyNode(nodeId: String, newValue: String) {
         val operation = NodeOperationEntity.Modify(nodeId, newValue)
-        _operationsFlow.update { operations ->
+        _pendingOperationsFlow.update { operations ->
             operations + operation
         }
     }
 
     override suspend fun applyAllCommand(): Result<Unit> {
         return runCatching {
-            val operations = _operationsFlow.value
+            val operations = _pendingOperationsFlow.value
+            val nodeIds = mutableListOf<String>()
             operations.forEach { operation ->
                 when (operation) {
                     is NodeOperationEntity.Add -> {
-                        hierDbSource.addNode(
+                        val id = hierDbSource.addNode(
                             HierarchyNodeEntity(
                                 id = operation.nodeId,
                                 value = operation.value,
                                 parentId = operation.parentId,
                             ),
                         )
+                        nodeIds.add(id)
                     }
 
                     is NodeOperationEntity.Delete -> {
-                        hierDbSource.deleteNode(operation.nodeId)
+                        val id = hierDbSource.deleteNode(operation.nodeId)
+                        nodeIds.add(id)
                     }
 
                     is NodeOperationEntity.Modify -> {
-                        hierDbSource.modifyNode(
+                        val id = hierDbSource.modifyNode(
                             nodeId = operation.nodeId,
                             newValue = operation.newValue,
                         )
+                        nodeIds.add(id)
                     }
                 }
             }
 
-            _operationsFlow.value = emptyList()
+            _pendingOperationsFlow.value = emptyList()
+            _updateNodeIdsFlow.value = nodeIds
         }
     }
 
@@ -82,6 +90,6 @@ class PendingOperationsQueueImpl(
     }
 
     override fun clearOperations() {
-        _operationsFlow.value = emptyList()
+        _pendingOperationsFlow.value = emptyList()
     }
 }

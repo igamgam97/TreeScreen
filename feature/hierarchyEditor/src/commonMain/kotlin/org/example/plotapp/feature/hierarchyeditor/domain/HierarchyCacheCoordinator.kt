@@ -3,7 +3,6 @@ package org.example.plotapp.feature.hierarchyeditor.domain
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.example.plotapp.feature.hierarchyeditor.data.entity.hiearchy.HierarchyNodeEntity
 import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeOperationEntity
 import org.example.plotapp.feature.hierarchyeditor.data.source.cache.TreeStateCache
 import org.example.plotapp.feature.hierarchyeditor.data.source.database.NodeDbSource
@@ -20,7 +19,7 @@ class HierarchyCacheCoordinator(
         get() = smartTreeCache.nodesFlow
 
     val operationFlow
-        get() = operationsSource.operationsFlow
+        get() = operationsSource.pendingOperationsFlow
 
     val dbCacheNodesFlow
         get() = nodeDbSource.nodesFlow
@@ -29,19 +28,26 @@ class HierarchyCacheCoordinator(
         // Живём все время жизни приложения.
         // Считаем что операции должны применяться даже при переходе на другой экран.
         CoroutineScope(ioDispatcher).launch {
-            operationsSource.operationsFlow.collect { operations ->
+            operationsSource.pendingOperationsFlow.collect { operations ->
                 updateOrderedNodesForOperations(operations)
             }
         }
         CoroutineScope(ioDispatcher).launch {
-            nodeDbSource.nodesFlow.collect { operations ->
-                actualiseCache(operations)
+            operationsSource.updatedNodeIdsFlow.collect { operationIds ->
+                actualiseCache(operationIds)
             }
         }
     }
 
-    private fun actualiseCache(nodes: Map<String, HierarchyNodeEntity>) {
-        smartTreeCache.updateNodes(nodes)
+    private suspend fun actualiseCache(nodeIds: List<String>) {
+        val operations = buildMap {
+            nodeIds.forEach { nodeId ->
+                nodeDbSource.findNodeById(nodeId)?.let { nodeValue ->
+                    put(nodeId, nodeValue)
+                }
+            }
+        }
+        smartTreeCache.updateNodes(operations)
     }
 
     suspend fun moveNode(nodeId: String): Result<Unit> = with(ioDispatcher) {
@@ -61,7 +67,7 @@ class HierarchyCacheCoordinator(
     }
 
     private fun isAncestorInDeletionQueue(nodeId: String): Boolean {
-        val nodesInDeletionQueue = operationsSource.operationsFlow.value
+        val nodesInDeletionQueue = operationsSource.pendingOperationsFlow.value
             .filterIsInstance<NodeOperationEntity.Delete>()
             .map { it.nodeId }
         return nodeDbSource.getNearestParentWithDepth(nodeId, nodesInDeletionQueue.toSet()) != null

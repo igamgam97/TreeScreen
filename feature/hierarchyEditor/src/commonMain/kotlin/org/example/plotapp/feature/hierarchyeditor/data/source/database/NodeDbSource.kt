@@ -12,7 +12,7 @@ interface NodeDbSource {
     /**
      * Adds a new node to the repository.
      */
-    suspend fun addNode(node: HierarchyNodeEntity)
+    suspend fun addNode(node: HierarchyNodeEntity): String
 
     /**
      * Finds a node by its ID.
@@ -22,12 +22,12 @@ interface NodeDbSource {
     /**
      * Deletes a node and all its descendants from the repository.
      */
-    suspend fun deleteNode(nodeId: String)
+    suspend fun deleteNode(nodeId: String): String
 
     /**
      * Modifies an existing node in the repository.
      */
-    suspend fun modifyNode(nodeId: String, newValue: String)
+    suspend fun modifyNode(nodeId: String, newValue: String): String
 
     /**
      * Resets the database cache.

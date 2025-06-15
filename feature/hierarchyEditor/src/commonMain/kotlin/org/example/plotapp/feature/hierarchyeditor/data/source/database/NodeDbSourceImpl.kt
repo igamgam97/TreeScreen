@@ -14,18 +14,19 @@ class NodeDbSourceImpl : NodeDbSource {
         initializeWithSampleData()
     }
 
-    override suspend fun addNode(node: HierarchyNodeEntity) {
+    override suspend fun addNode(node: HierarchyNodeEntity): String {
         val isParentDeleted = _nodesFlow.value[node.parentId]?.isDeleted == true
         _nodesFlow.update {
             it + (node.id to node.copy(isDeleted = isParentDeleted))
         }
+        return node.id
     }
 
     override suspend fun findNodeById(nodeId: String): HierarchyNodeEntity? {
         return nodesFlow.value[nodeId]
     }
 
-    override suspend fun deleteNode(nodeId: String) {
+    override suspend fun deleteNode(nodeId: String): String {
         _nodesFlow.update { nodeMap ->
             val nodesToUpdate = mutableMapOf<String, HierarchyNodeEntity>()
 
@@ -41,6 +42,7 @@ class NodeDbSourceImpl : NodeDbSource {
             // Возвращаем обновленную карту
             nodeMap + nodesToUpdate
         }
+        return nodeId
     }
 
     private fun markDescendantsAsDeleted(
@@ -58,7 +60,7 @@ class NodeDbSourceImpl : NodeDbSource {
         }
     }
 
-    override suspend fun modifyNode(nodeId: String, newValue: String) {
+    override suspend fun modifyNode(nodeId: String, newValue: String): String {
         _nodesFlow.update {
             val nodeIndex = it
             if (nodeId !in nodeIndex) return@update it
@@ -66,6 +68,7 @@ class NodeDbSourceImpl : NodeDbSource {
             val modifiedNode = node.copy(value = newValue)
             it + (nodeId to modifiedNode)
         }
+        return nodeId
     }
 
     override fun getNearestParentWithDepth(nodeId: String, cache: Set<String>): NodeWithDepth? {

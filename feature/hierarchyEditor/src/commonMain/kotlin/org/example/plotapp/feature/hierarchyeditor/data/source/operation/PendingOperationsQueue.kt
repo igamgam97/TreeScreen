@@ -7,7 +7,12 @@ interface PendingOperationsQueue {
     /**
      * Flow of pending operations.
      */
-    val operationsFlow: StateFlow<List<NodeOperationEntity>>
+    val pendingOperationsFlow: StateFlow<List<NodeOperationEntity>>
+
+    /**
+     * Flow of ids nodes for updating.
+     */
+    val updatedNodeIdsFlow: StateFlow<List<String>>
 
     /**
      * Adds a new node operation to the queue.
