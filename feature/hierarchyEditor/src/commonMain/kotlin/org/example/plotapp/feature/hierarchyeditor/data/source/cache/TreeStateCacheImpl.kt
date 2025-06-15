@@ -1,5 +1,6 @@
 package org.example.plotapp.feature.hierarchyeditor.data.source.cache
 
+import co.touchlab.stately.collections.ConcurrentMutableMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,7 @@ data class NewTreeNode(
 )
 
 class TreeStateCacheImpl : TreeStateCache {
-    private val nodeMap = mutableMapOf<String, NewTreeNode>()
+    private val nodeMap = ConcurrentMutableMap<String, NewTreeNode>()
 
     // Observable state for tree nodes
     private val _nodesFlow = MutableStateFlow<Map<String, NewTreeNode>>(emptyMap())
@@ -32,7 +33,12 @@ class TreeStateCacheImpl : TreeStateCache {
         return upsertNode(id, value, parentId, NodeStatus.Unchanged)
     }
 
-    private fun upsertNode(id: String, value: String, parentId: String?, status: NodeStatus): NewTreeNode {
+    private fun upsertNode(
+        id: String,
+        value: String,
+        parentId: String?,
+        status: NodeStatus,
+    ): NewTreeNode {
         val existingNode = nodeMap[id]
         if (existingNode != null) {
             return existingNode

@@ -1,6 +1,6 @@
 package org.example.plotapp.feature.hierarchyeditor.presentation
 
-import org.example.plotapp.feature.hierarchyeditor.component.HierarchyNodeUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
 import org.example.plotapp.feature.hierarchyeditor.data.source.cache.NewTreeNode
 
 class TreeCacheMapper {

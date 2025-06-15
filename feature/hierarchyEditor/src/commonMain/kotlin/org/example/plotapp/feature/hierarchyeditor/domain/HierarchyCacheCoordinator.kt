@@ -26,8 +26,8 @@ class HierarchyCacheCoordinator(
         get() = nodeDbSource.nodesFlow
 
     init {
-        // Отслеживаем изменения операций и обновляем дерево инкрементально
-        // moveNode обновляет дерево напрямую, поэтому слушаем только операции
+        // Живём все время жизни приложения.
+        // Считаем что операции должны применяться даже при переходе на другой экран.
         CoroutineScope(ioDispatcher).launch {
             operationsSource.operationsFlow.collect { operations ->
                 updateOrderedNodesForOperations(operations)
@@ -46,7 +46,9 @@ class HierarchyCacheCoordinator(
 
     suspend fun moveNode(nodeId: String): Result<Unit> = with(ioDispatcher) {
         val node = nodeDbSource.findNodeById(nodeId)
-            ?: throw IllegalArgumentException("Node with id $nodeId not found in database")
+            ?: return Result.failure(
+                IllegalArgumentException("Node with id $nodeId not found in database"),
+            )
         if (isAncestorInDeletionQueue(nodeId)) {
             return Result.failure(Exception("Cannot move node: ancestor is in deletion queue"))
         }

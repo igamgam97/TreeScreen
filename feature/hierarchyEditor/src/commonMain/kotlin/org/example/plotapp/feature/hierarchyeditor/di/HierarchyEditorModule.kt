@@ -9,8 +9,8 @@ import org.example.plotapp.feature.hierarchyeditor.data.source.operation.Pending
 import org.example.plotapp.feature.hierarchyeditor.data.source.operation.PendingOperationsQueueImpl
 import org.example.plotapp.feature.hierarchyeditor.domain.HierarchyCacheCoordinator
 import org.example.plotapp.feature.hierarchyeditor.presentation.HierarchyViewModel
-import org.example.plotapp.feature.hierarchyeditor.presentation.HierchyEntityMapper
 import org.example.plotapp.feature.hierarchyeditor.presentation.TreeCacheMapper
+import org.example.plotapp.feature.hierarchyeditor.presentation.TreeDbMapper
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
@@ -24,7 +24,7 @@ val hierarchyEditorModule = module {
         DispatcherIoScope
     }
     singleOf(::NodeDbSourceImpl) bind NodeDbSource::class
-    singleOf(::HierchyEntityMapper)
+    singleOf(::TreeDbMapper)
     singleOf(::TreeCacheMapper)
     singleOf(::TreeStateCacheImpl) bind TreeStateCache::class
     singleOf(::PendingOperationsQueueImpl) bind PendingOperationsQueue::class

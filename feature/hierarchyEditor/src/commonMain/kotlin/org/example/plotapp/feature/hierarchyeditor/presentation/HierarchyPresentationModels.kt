@@ -1,32 +1,38 @@
 package org.example.plotapp.feature.hierarchyeditor.presentation
 
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import org.example.plotapp.core.viewmodel.StateType
-import org.example.plotapp.feature.hierarchyeditor.component.HierarchyNodeUiModel
-import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeOperationEntity
+import org.example.plotapp.feature.hierarchyeditor.component.control.ControlPanelUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.DbTreeViewComponentUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.TreeViewComponentUiModel
 
 /**
  * UI state for the hierarchy editor screen.
  */
 data class HierarchyScreenState(
-    val stateType: StateType<Unit, Unit, String>,
-    val databaseTree: ImmutableList<HierarchyNodeUiModel>,
-    val cachedTree: ImmutableList<HierarchyNodeUiModel>,
-    val operationsCache: ImmutableList<NodeOperationEntity>,
-    val selectedNodeId: HierarchyNodeUiModel? = null,
+    val databaseTree: DbTreeViewComponentUiModel,
+    val cachedTree: TreeViewComponentUiModel,
+    val selectedNodeId: String?,
     val isSelectedNodeInDb: Boolean,
+    val controlPanelUiModel: ControlPanelUiModel,
+    val isOperationsInProgress: Boolean,
 ) {
     companion object {
         val Default = HierarchyScreenState(
-            stateType = StateType.data(),
-            databaseTree = persistentListOf(),
-            cachedTree = persistentListOf(),
-            operationsCache = persistentListOf(),
+            databaseTree = DbTreeViewComponentUiModel.Default,
+            cachedTree = TreeViewComponentUiModel.Default,
             selectedNodeId = null,
             isSelectedNodeInDb = true,
+            controlPanelUiModel = ControlPanelUiModel.Default,
+            isOperationsInProgress = false,
         )
     }
+
+    val selectedNode
+        get() = if (isSelectedNodeInDb) {
+            databaseTree.nodes.find { it.id == selectedNodeId }
+        } else {
+            cachedTree.nodes.find { it.id == selectedNodeId }
+        }
 }
 
 /**
@@ -39,7 +45,7 @@ sealed interface HierarchyAction {
 
     data class SelectNode(val node: HierarchyNodeUiModel) : HierarchyAction
     data class SelectCacheNode(val node: HierarchyNodeUiModel) : HierarchyAction
-    data class MoveToCache(val nodeId: String) : HierarchyAction
+    data object MoveToCache : HierarchyAction
     data class AddNode(val value: String, val parentId: String?) : HierarchyAction
     data class ModifyNode(val nodeId: String, val newValue: String) : HierarchyAction
     data class DeleteNode(val nodeId: String) : HierarchyAction
@@ -53,4 +59,35 @@ sealed interface HierarchyEvent {
     data object SyncCompleted : HierarchyEvent
     data object CacheCleared : HierarchyEvent
     data class NodeOperationCompleted(val operation: String) : HierarchyEvent
+}
+
+fun HierarchyScreenState.updateSelection(
+    selectedNode: HierarchyNodeUiModel?,
+    isSelectedNodeInDb: Boolean,
+): HierarchyScreenState {
+    return copy(
+        selectedNodeId = selectedNode?.id,
+        isSelectedNodeInDb = isSelectedNodeInDb,
+        cachedTree = cachedTree.copy(
+            selectedNodeId = if (!isSelectedNodeInDb) selectedNode?.id else null,
+        ),
+        databaseTree = databaseTree.copy(
+            selectedNodeId = if (isSelectedNodeInDb) selectedNode?.id else null,
+        ),
+        controlPanelUiModel = controlPanelUiModel.copy(
+            selectedNode = selectedNode,
+            selectedNodeInDatabase = isSelectedNodeInDb,
+        ),
+    )
+}
+
+fun HierarchyScreenState.updateOperationLoadingStatus(
+    isLoading: Boolean,
+): HierarchyScreenState {
+    return copy(
+        controlPanelUiModel = controlPanelUiModel.copy(
+            isLoading = isLoading,
+        ),
+        isOperationsInProgress = isLoading,
+    )
 }

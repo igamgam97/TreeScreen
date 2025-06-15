@@ -1,4 +1,4 @@
-package org.example.plotapp.feature.hierarchyeditor.component
+package org.example.plotapp.feature.hierarchyeditor.component.tree
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,8 +38,7 @@ import plotapp.feature.hierarchyeditor.generated.resources.database_tree
 
 @Composable
 fun DBTreeView(
-    nodes: ImmutableList<HierarchyNodeUiModel>,
-    selectedNodeId: String?,
+    treeViewComponentUiModel: DbTreeViewComponentUiModel,
     onNodeSelected: (HierarchyNodeUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -47,9 +47,17 @@ fun DBTreeView(
         titleColor = Color(0xFF8B4513), // Brown
         modifier = modifier,
     ) {
+        if (treeViewComponentUiModel.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
         TreeNodesList(
-            nodes = nodes,
-            selectedNodeId = selectedNodeId,
+            nodes = treeViewComponentUiModel.nodes,
+            selectedNodeId = treeViewComponentUiModel.selectedNodeId,
             onNodeSelected = onNodeSelected,
         )
     }
@@ -57,8 +65,7 @@ fun DBTreeView(
 
 @Composable
 fun CachedTreeView(
-    nodes: ImmutableList<HierarchyNodeUiModel>,
-    selectedNodeId: String?,
+    treeViewComponentUiModel: TreeViewComponentUiModel,
     onNodeSelected: (HierarchyNodeUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -68,8 +75,8 @@ fun CachedTreeView(
         modifier = modifier,
     ) {
         TreeNodesList(
-            nodes = nodes,
-            selectedNodeId = selectedNodeId,
+            nodes = treeViewComponentUiModel.nodes,
+            selectedNodeId = treeViewComponentUiModel.selectedNodeId,
             onNodeSelected = onNodeSelected,
         )
     }

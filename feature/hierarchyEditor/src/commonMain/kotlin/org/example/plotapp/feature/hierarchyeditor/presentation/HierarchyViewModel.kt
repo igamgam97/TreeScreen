@@ -6,8 +6,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.plotapp.core.viewmodel.BaseViewModel
-import org.example.plotapp.core.viewmodel.StateType
-import org.example.plotapp.feature.hierarchyeditor.component.HierarchyNodeUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
 import org.example.plotapp.feature.hierarchyeditor.domain.HierarchyCacheCoordinator
 
 /**
@@ -15,7 +14,7 @@ import org.example.plotapp.feature.hierarchyeditor.domain.HierarchyCacheCoordina
  */
 class HierarchyViewModel(
     private val hierarchyCacheCoordinator: HierarchyCacheCoordinator,
-    private val hierchyEntityMapper: HierchyEntityMapper,
+    private val treeDbMapper: TreeDbMapper,
     private val treeCacheMapper: TreeCacheMapper,
 ) : BaseViewModel<HierarchyScreenState, HierarchyAction, HierarchyEvent>(
     initialUiState = HierarchyScreenState.Default,
@@ -28,7 +27,7 @@ class HierarchyViewModel(
             is HierarchyAction.ResetCache -> handleResetCache()
             is HierarchyAction.SelectNode -> handleSelectNode(uiAction.node)
             is HierarchyAction.SelectCacheNode -> handleSelectCacheNode(uiAction.node)
-            is HierarchyAction.MoveToCache -> handleMoveToCache(uiAction.nodeId)
+            is HierarchyAction.MoveToCache -> handleMoveToCache()
             is HierarchyAction.AddNode -> handleAddNode(uiAction.value, uiAction.parentId)
             is HierarchyAction.ModifyNode -> handleModifyNode(
                 uiAction.nodeId,
@@ -40,13 +39,6 @@ class HierarchyViewModel(
     }
 
     private fun loadInitialData() {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    stateType = StateType.loading(),
-                )
-            }
-        }
 
         hierarchyCacheCoordinator.initializeWithSampleData()
 
@@ -54,7 +46,9 @@ class HierarchyViewModel(
             hierarchyCacheCoordinator.operationFlow.collect { operations ->
                 _uiState.update {
                     it.copy(
-                        operationsCache = operations.toImmutableList(),
+                        controlPanelUiModel = it.controlPanelUiModel.copy(
+                            hasOperations = operations.isNotEmpty(),
+                        ),
                     )
                 }
             }
@@ -62,12 +56,14 @@ class HierarchyViewModel(
 
         viewModelScope.launch {
             hierarchyCacheCoordinator.dbCacheNodesFlow
-                .map { hierchyEntityMapper.convert(it.values.toList()) }
+                .map { treeDbMapper.convert(it.values.toList()) }
                 .collect { nodes ->
                     _uiState.update {
                         it.copy(
-                            stateType = StateType.data(),
-                            databaseTree = nodes.toImmutableList(),
+                            databaseTree = it.databaseTree.copy(
+                                isLoading = false,
+                                nodes = nodes.toImmutableList(),
+                            ),
                         )
                     }
                 }
@@ -79,7 +75,9 @@ class HierarchyViewModel(
                 .collect { tree ->
                     _uiState.update {
                         it.copy(
-                            cachedTree = tree.toImmutableList(),
+                            cachedTree = it.cachedTree.copy(
+                                nodes = tree.toImmutableList(),
+                            ),
                         )
                     }
                 }
@@ -89,23 +87,23 @@ class HierarchyViewModel(
     private fun handleApplyBtnClick() {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(
-                    stateType = StateType.loading(),
+                it.updateOperationLoadingStatus(
+                    isLoading = true,
                 )
             }
             val result = hierarchyCacheCoordinator.applyAllCommand()
             result.fold(
                 onSuccess = {
                     _uiState.update {
-                        it.copy(
-                            stateType = StateType.loading(),
+                        it.updateOperationLoadingStatus(
+                            isLoading = false,
                         )
                     }
                 },
                 onFailure = {
                     _uiState.update {
-                        it.copy(
-                            stateType = StateType.loading(),
+                        it.updateOperationLoadingStatus(
+                            isLoading = false,
                         )
                     }
                     _singleEvent.emit(HierarchyEvent.ShowErrorInfo("Something wrong"))
@@ -122,8 +120,8 @@ class HierarchyViewModel(
 
     private fun handleSelectNode(node: HierarchyNodeUiModel) {
         _uiState.update {
-            it.copy(
-                selectedNodeId = node,
+            it.updateSelection(
+                selectedNode = node,
                 isSelectedNodeInDb = true,
             )
         }
@@ -131,33 +129,34 @@ class HierarchyViewModel(
 
     private fun handleSelectCacheNode(node: HierarchyNodeUiModel) {
         _uiState.update {
-            it.copy(
-                selectedNodeId = node,
+            it.updateSelection(
+                selectedNode = node,
                 isSelectedNodeInDb = false,
             )
         }
     }
 
-    private fun handleMoveToCache(nodeId: String) {
+    private fun handleMoveToCache() {
+        val selectedNode = _uiState.value.selectedNode ?: return
         viewModelScope.launch {
             _uiState.update {
-                it.copy(
-                    stateType = StateType.loading(),
+                it.updateOperationLoadingStatus(
+                    isLoading = true,
                 )
             }
-            val result = hierarchyCacheCoordinator.moveNode(nodeId)
+            val result = hierarchyCacheCoordinator.moveNode(selectedNode.id)
             result.fold(
                 onSuccess = {
                     _uiState.update {
-                        it.copy(
-                            stateType = StateType.data(),
+                        it.updateOperationLoadingStatus(
+                            isLoading = false,
                         )
                     }
                 },
                 onFailure = {
                     _uiState.update {
-                        it.copy(
-                            stateType = StateType.data(),
+                        it.updateOperationLoadingStatus(
+                            isLoading = false,
                         )
                     }
                     result.onFailure {

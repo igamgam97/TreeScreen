@@ -1,4 +1,4 @@
-package org.example.plotapp.feature.hierarchyeditor.component
+package org.example.plotapp.feature.hierarchyeditor.component.control
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,7 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeStatus
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
 import org.jetbrains.compose.resources.stringResource
 import plotapp.feature.hierarchyeditor.generated.resources.Res
 import plotapp.feature.hierarchyeditor.generated.resources.add
@@ -45,14 +45,11 @@ import plotapp.feature.hierarchyeditor.generated.resources.update
 
 @Composable
 fun ControlPanel(
-    hasOperations: Boolean,
-    selectedNode: HierarchyNodeUiModel?,
-    selectedNodeInDatabase: Boolean,
-    isLoading: Boolean,
+    controlPanelUiModel: ControlPanelUiModel,
     onAddNode: () -> Unit,
     onModifyNode: () -> Unit,
     onDeleteNode: () -> Unit,
-    onMoveNodeBtnClick: (String) -> Unit,
+    onMoveNodeBtnClick: () -> Unit,
     onSyncToDatabase: () -> Unit,
     onResetCache: () -> Unit,
     modifier: Modifier = Modifier,
@@ -62,9 +59,11 @@ fun ControlPanel(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
+        val isLoading = controlPanelUiModel.isLoading
         val isCacheSelected =
-            selectedNode != null && !selectedNodeInDatabase && selectedNode.status != NodeStatus.Deleted
-        val isDbSelected = selectedNodeInDatabase && selectedNode?.status != NodeStatus.Deleted
+            controlPanelUiModel.isCacheSelected
+        val isDbSelected =
+            controlPanelUiModel.isDbSelected
 
         // Node operations
         CompactButton(
@@ -87,11 +86,7 @@ fun ControlPanel(
 
         CompactButton(
             icon = Icons.AutoMirrored.Filled.ArrowForward,
-            onClick = {
-                selectedNode?.let { nodeId ->
-                    onMoveNodeBtnClick(nodeId.id)
-                }
-            },
+            onClick = onMoveNodeBtnClick,
             enabled = isDbSelected && !isLoading,
         )
 
@@ -101,7 +96,7 @@ fun ControlPanel(
         CompactButton(
             icon = Icons.Default.Check,
             onClick = onSyncToDatabase,
-            enabled = hasOperations && !isLoading,
+            enabled = controlPanelUiModel.hasOperations && !isLoading,
         )
 
         CompactButton(

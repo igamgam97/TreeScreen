@@ -31,6 +31,7 @@ mockk = "1.13.9"
 turbine = "1.1.0"
 kotest = "5.8.1"
 mokkery = "2.7.2"
+statelyConcurrency = "2.0.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -89,6 +90,8 @@ detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = 
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 android-detekt-compose = { group = "com.twitter.compose.rules", name = "detekt", version.ref = "androidDetektCompose" }
 detekt-gradlePlugin = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
+
+stately-concurrency-collections = { group = "co.touchlab", name = "stately-concurrent-collections", version.ref = "statelyConcurrency" }
 
 [bundles]
 ktor-common = ["ktor-client-core", "ktor-client-logging", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json"]

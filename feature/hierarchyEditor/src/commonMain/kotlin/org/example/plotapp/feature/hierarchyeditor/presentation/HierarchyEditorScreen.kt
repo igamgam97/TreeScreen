@@ -29,14 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.example.plotapp.core.viewmodel.collectInLaunchedEffectWithLifecycle
-import org.example.plotapp.feature.hierarchyeditor.component.AddNodeDialog
-import org.example.plotapp.feature.hierarchyeditor.component.CachedTreeView
-import org.example.plotapp.feature.hierarchyeditor.component.ConfirmDeleteDialog
-import org.example.plotapp.feature.hierarchyeditor.component.ControlPanel
-import org.example.plotapp.feature.hierarchyeditor.component.DBTreeView
-import org.example.plotapp.feature.hierarchyeditor.component.HierarchyNodeUiModel
-import org.example.plotapp.feature.hierarchyeditor.component.ModifyNodeDialog
-import org.example.plotapp.feature.hierarchyeditor.component.getNodeColor
+import org.example.plotapp.feature.hierarchyeditor.component.control.AddNodeDialog
+import org.example.plotapp.feature.hierarchyeditor.component.control.ConfirmDeleteDialog
+import org.example.plotapp.feature.hierarchyeditor.component.control.ControlPanel
+import org.example.plotapp.feature.hierarchyeditor.component.control.ModifyNodeDialog
+import org.example.plotapp.feature.hierarchyeditor.component.tree.CachedTreeView
+import org.example.plotapp.feature.hierarchyeditor.component.tree.DBTreeView
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.getNodeColor
 import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeStatus
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -69,8 +69,12 @@ private fun HierarchyViewModel.onApplyBtnClick() {
     dispatch(HierarchyAction.Apply)
 }
 
-private fun HierarchyViewModel.onMoveToCache(nodeId: String) {
-    dispatch(HierarchyAction.MoveToCache(nodeId))
+private fun HierarchyViewModel.onMoveToCache() {
+    dispatch(HierarchyAction.MoveToCache)
+}
+
+private fun HierarchyViewModel.init() {
+    dispatch(HierarchyAction.Init)
 }
 
 @Suppress("LongMethod")
@@ -106,9 +110,8 @@ fun HierarchyEditorRoute(
         }
     }
 
-    // Initialize data
     LaunchedEffect(viewModel) {
-        viewModel.dispatch(HierarchyAction.Init)
+        viewModel.init()
     }
 
     HierarchyEditorScreen(
@@ -133,7 +136,7 @@ fun HierarchyEditorRoute(
     // Dialogs
     AddNodeDialog(
         isVisible = showAddDialog,
-        selectedParentId = uiState.selectedNodeId?.id,
+        selectedParentId = uiState.selectedNode?.id,
         onDismiss = { showAddDialog = false },
         onConfirm = { value, parentId ->
             viewModel.dispatch(HierarchyAction.AddNode(value, parentId))
@@ -143,10 +146,10 @@ fun HierarchyEditorRoute(
 
     ModifyNodeDialog(
         isVisible = showModifyDialog,
-        currentNode = uiState.selectedNodeId,
+        currentNode = uiState.selectedNode,
         onDismiss = { showModifyDialog = false },
         onConfirm = { newValue ->
-            uiState.selectedNodeId?.let { nodeId ->
+            uiState.selectedNode?.let { nodeId ->
                 viewModel.dispatch(HierarchyAction.ModifyNode(nodeId.id, newValue))
             }
             showModifyDialog = false
@@ -155,10 +158,10 @@ fun HierarchyEditorRoute(
 
     ConfirmDeleteDialog(
         isVisible = showDeleteDialog,
-        nodeToDelete = uiState.selectedNodeId,
+        nodeToDelete = uiState.selectedNode,
         onDismiss = { showDeleteDialog = false },
         onConfirm = {
-            uiState.selectedNodeId?.let { nodeId ->
+            uiState.selectedNode?.let { nodeId ->
                 viewModel.dispatch(HierarchyAction.DeleteNode(nodeId.id))
             }
             showDeleteDialog = false
@@ -176,7 +179,7 @@ private fun HierarchyEditorScreen(
     onSelectCacheNode: (HierarchyNodeUiModel) -> Unit,
     onResetBtnClick: () -> Unit,
     onApplyBtnClick: () -> Unit,
-    onMoveNodeBtnClick: (String) -> Unit,
+    onMoveNodeBtnClick: () -> Unit,
     onShowAddDialog: () -> Unit,
     onShowModifyDialog: () -> Unit,
     onShowDeleteDialog: () -> Unit,
@@ -216,7 +219,7 @@ private fun Data(
     onSelectCacheNode: (HierarchyNodeUiModel) -> Unit,
     onResetBtnClick: () -> Unit,
     onApplyBtnClick: () -> Unit,
-    onMoveNodeBtnClick: (String) -> Unit,
+    onMoveNodeBtnClick: () -> Unit,
     onShowAddDialog: () -> Unit,
     onShowModifyDialog: () -> Unit,
     onShowDeleteDialog: () -> Unit,
@@ -228,10 +231,7 @@ private fun Data(
     ) {
         // Control Panel
         ControlPanel(
-            hasOperations = uiState.operationsCache.isNotEmpty(),
-            selectedNode = uiState.selectedNodeId,
-            selectedNodeInDatabase = uiState.isSelectedNodeInDb,
-            isLoading = uiState.stateType.isLoading(),
+            controlPanelUiModel = uiState.controlPanelUiModel,
             onAddNode = onShowAddDialog,
             onModifyNode = onShowModifyDialog,
             onDeleteNode = onShowDeleteDialog,
@@ -248,7 +248,7 @@ private fun Data(
             modifier = Modifier.height(5.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (uiState.stateType.isLoading()) {
+            if (uiState.isOperationsInProgress) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -261,24 +261,14 @@ private fun Data(
         ) {
             // Database Tree View
             DBTreeView(
-                nodes = uiState.databaseTree,
-                selectedNodeId = if (uiState.isSelectedNodeInDb) {
-                    uiState.selectedNodeId?.id
-                } else {
-                    null
-                },
+                treeViewComponentUiModel = uiState.databaseTree,
                 onNodeSelected = onSelectedNode,
                 modifier = Modifier.weight(1f),
             )
 
             // Cached Tree View
             CachedTreeView(
-                nodes = uiState.cachedTree,
-                selectedNodeId = if (!uiState.isSelectedNodeInDb) {
-                    uiState.selectedNodeId?.id
-                } else {
-                    null
-                },
+                treeViewComponentUiModel = uiState.cachedTree,
                 onNodeSelected = onSelectCacheNode,
                 modifier = Modifier.weight(1f),
             )

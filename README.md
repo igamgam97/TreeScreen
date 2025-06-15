@@ -84,4 +84,4 @@ Hierarchy Editor is designed to solve the challenge of managing large hierarchic
 
 ---
 
-Built with using Kotlin Multiplatform and Clean Architecture principles
+Built with using Kotlin Multiplatform and Solid principles

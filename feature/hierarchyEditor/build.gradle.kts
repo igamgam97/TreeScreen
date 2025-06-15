@@ -22,6 +22,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             // Collections
             implementation(libs.kotlinx.collections.immutable)
+            implementation(libs.stately.concurrency.collections)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

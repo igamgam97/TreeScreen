@@ -1,10 +1,10 @@
 package org.example.plotapp.feature.hierarchyeditor.presentation
 
-import org.example.plotapp.feature.hierarchyeditor.component.HierarchyNodeUiModel
+import org.example.plotapp.feature.hierarchyeditor.component.tree.HierarchyNodeUiModel
 import org.example.plotapp.feature.hierarchyeditor.data.entity.hiearchy.HierarchyNodeEntity
 import org.example.plotapp.feature.hierarchyeditor.data.entity.operation.NodeStatus
 
-class HierchyEntityMapper {
+class TreeDbMapper {
 
     fun convert(nodes: List<HierarchyNodeEntity>): List<HierarchyNodeUiModel> {
         val result = mutableListOf<HierarchyNodeUiModel>()
